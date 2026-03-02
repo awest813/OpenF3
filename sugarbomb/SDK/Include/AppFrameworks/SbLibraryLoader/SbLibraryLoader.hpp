@@ -35,18 +35,20 @@ namespace sbe
 class SbLibraryLoader
 {
 public:
-	///
-	static int Load(const char *asPath);
+	using LibHandle = void *;
 	
 	///
-	static void Unload(int anHandle);
+	static LibHandle Load(const char *asPath);
 	
 	///
-	static void *GetSymbol(int anHandle, const char *asSymbol);
+	static void Unload(LibHandle anHandle);
+	
+	///
+	static void *GetSymbol(LibHandle anHandle, const char *asSymbol);
 	
 	///
 	template<typename T>
-	inline static T GetSymbol(int anHandle, const char *asSymbol){return reinterpret_cast<T>(GetSymbol(anHandle, asSymbol));}
+	inline static T GetSymbol(LibHandle anHandle, const char *asSymbol){return reinterpret_cast<T>(GetSymbol(anHandle, asSymbol));}
 };
 
 }; // namespace sbe

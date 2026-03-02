@@ -46,7 +46,7 @@ private:
 	
 	IRenderSystem *mpRenderSystem{nullptr};
 	
-	int mnRenderLib{-1};
+	void *mnRenderLib{nullptr};
 };
 
 }; // namespace sbe

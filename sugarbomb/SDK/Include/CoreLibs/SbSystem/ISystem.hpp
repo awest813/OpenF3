@@ -34,6 +34,8 @@ namespace sbe
 
 struct ISystem
 {
+	using LibHandle = void *;
+	
 	///
 	virtual void Init() = 0;
 	
@@ -41,17 +43,17 @@ struct ISystem
 	virtual void Shutdown() = 0;
 	
 	///
-	virtual int LoadLib(const char *asPath) = 0;
+	virtual LibHandle LoadLib(const char *asPath) = 0;
 	
 	///
-	virtual void FreeLib(int anHandle) = 0;
+	virtual void FreeLib(LibHandle anHandle) = 0;
 	
 	///
-	virtual void *GetLibSymbol(int anHandle, const char *asSymbol) const = 0;
+	virtual void *GetLibSymbol(LibHandle anHandle, const char *asSymbol) const = 0;
 	
 	///
 	template<typename T>
-	T GetLibSymbol(int anHandle, const char *asSymbol) const {return reinterpret_cast<T>(GetLibSymbol(anHandle, asSymbol));}
+	T GetLibSymbol(LibHandle anHandle, const char *asSymbol) const {return reinterpret_cast<T>(GetLibSymbol(anHandle, asSymbol));}
 	
 	///
 	virtual void Printf(const char *asMsg, ...) = 0;

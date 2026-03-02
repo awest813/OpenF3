@@ -24,24 +24,51 @@ along with SugarBombEngine. If not, see <http://www.gnu.org/licenses/>.
 /// @file
 
 #include <windows.h>
+#include <string>
 
 #include "SbSystem.hpp"
 
 namespace sbe::SbSystem
 {
 
-int SbSystem::LoadLib(const char *asPath)
+namespace
 {
-	return reinterpret_cast<int>(LoadLibrary(asPath));
+std::string BuildPlatformLibName(const char *asModuleName)
+{
+	constexpr auto suffix{".dll"};
+	return std::string(asModuleName) + suffix;
+};
 };
 
-void SbSystem::FreeLib(int anHandle)
+ISystem::LibHandle SbSystem::LoadLib(const char *asPath)
 {
+	if((asPath == nullptr) || (asPath[0] == '\0'))
+		return nullptr;
+	
+	if(HMODULE pHandle{LoadLibraryA(asPath)})
+		return reinterpret_cast<ISystem::LibHandle>(pHandle);
+	
+	std::string sPlatformName{BuildPlatformLibName(asPath)};
+	
+	if(HMODULE pHandle{LoadLibraryA(sPlatformName.c_str())})
+		return reinterpret_cast<ISystem::LibHandle>(pHandle);
+	
+	return nullptr;
+};
+
+void SbSystem::FreeLib(ISystem::LibHandle anHandle)
+{
+	if(!anHandle)
+		return;
+	
 	FreeLibrary(reinterpret_cast<HMODULE>(anHandle));
 };
 
-void *SbSystem::GetLibSymbol(int anHandle, const char *asSymbol) const
+void *SbSystem::GetLibSymbol(ISystem::LibHandle anHandle, const char *asSymbol) const
 {
+	if(!anHandle)
+		return nullptr;
+	
 	return reinterpret_cast<void *>(GetProcAddress(reinterpret_cast<HMODULE>(anHandle), asSymbol));
 };
 

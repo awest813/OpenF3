@@ -46,7 +46,7 @@ private:
 	
 	IInputSystem *mpInputSystem{nullptr};
 	
-	int mnInputLib{-1};
+	void *mnInputLib{nullptr};
 };
 
 }; // namespace sbe

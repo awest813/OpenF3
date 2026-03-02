@@ -45,7 +45,7 @@ private:
 	ISystem *mpSystem{nullptr};
 	IFileSystem *mpFileSystem{nullptr};
 	
-	int mnSystemLib{-1};
+	void *mnSystemLib{nullptr};
 };
 
 }; // namespace sbe

@@ -53,7 +53,7 @@ private:
 	
 	INetworkSystem *mpNetworkSystem{nullptr};
 	
-	int mnNetworkLib{-1};
+	void *mnNetworkLib{nullptr};
 };
 
 };}; // namespace sbe::SbGameFramework

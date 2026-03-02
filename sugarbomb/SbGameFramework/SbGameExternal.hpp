@@ -53,7 +53,7 @@ private:
 	
 	IGame *mpGame{nullptr};
 	
-	int mnGameLib{-1};
+	void *mnGameLib{nullptr};
 };
 
 };}; // namespace sbe::SbGameFramework

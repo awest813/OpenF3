@@ -26,6 +26,7 @@ along with SugarBombEngine. If not, see <http://www.gnu.org/licenses/>.
 //*****************************************************************************
 
 #include <dlfcn.h>
+#include <string>
 
 #include "AppFrameworks/SbLibraryLoader/SbLibraryLoader.hpp"
 
@@ -34,18 +35,56 @@ along with SugarBombEngine. If not, see <http://www.gnu.org/licenses/>.
 namespace sbe
 {
 
-int SbLibraryLoader::Load(const char *asPath)
+namespace
 {
-	return dlopen(asPath, RTLD_NOW);
+std::string BuildPlatformLibName(const char *asModuleName)
+{
+#if defined(__APPLE__)
+	constexpr auto suffix{".dylib"};
+#else
+	constexpr auto suffix{".so"};
+#endif
+	return std::string(asModuleName) + suffix;
+};
 };
 
-void SbLibraryLoader::Unload(int anHandle)
+SbLibraryLoader::LibHandle SbLibraryLoader::Load(const char *asPath)
 {
+	if((asPath == nullptr) || (asPath[0] == '\0'))
+		return nullptr;
+	
+	if(void *pHandle{dlopen(asPath, RTLD_NOW)})
+		return pHandle;
+	
+	std::string sPlatformName{BuildPlatformLibName(asPath)};
+	
+	if(void *pHandle{dlopen(sPlatformName.c_str(), RTLD_NOW)})
+		return pHandle;
+	
+	if(sPlatformName.find('/') == std::string::npos && sPlatformName.find('\\') == std::string::npos)
+	{
+		sPlatformName.insert(0, "./");
+		
+		if(void *pHandle{dlopen(sPlatformName.c_str(), RTLD_NOW)})
+			return pHandle;
+	};
+	
+	return nullptr;
+};
+
+void SbLibraryLoader::Unload(SbLibraryLoader::LibHandle anHandle)
+{
+	if(!anHandle)
+		return;
+	
 	dlclose(anHandle);
 };
 
-void *SbLibraryLoader::GetSymbol(int anHandle, const char *asSymbol)
+void *SbLibraryLoader::GetSymbol(SbLibraryLoader::LibHandle anHandle, const char *asSymbol)
 {
+	if(!anHandle)
+		return nullptr;
+	
 	return dlsym(anHandle, asSymbol);
 };
 

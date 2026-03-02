@@ -48,7 +48,7 @@ private:
 	
 	IGameFramework *mpFramework{nullptr};
 	
-	int mnFrameworkLib{-1};
+	void *mnFrameworkLib{nullptr};
 };
 
 }; // namespace sbe
