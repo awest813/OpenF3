@@ -33,6 +33,7 @@ namespace f3goaty
 
 struct OpenF3BootstrapConfig
 {
+	std::vector<std::string> installRoots;
 	std::vector<std::string> dataRoots;
 	std::vector<std::string> plugins;
 	std::vector<std::string> archives;

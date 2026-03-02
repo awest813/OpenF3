@@ -128,9 +128,11 @@ void SbGameFramework::RunContentBootstrap()
 	
 	Content::OpenF3ContentValidator Validator;
 	const auto ValidationResult{Validator.Validate(Manifest)};
-	const auto sBootstrapReport{Content::OpenF3BootstrapReport::Render(Manifest, ValidationResult)};
+	const auto sBootstrapReport{Content::OpenF3BootstrapReport::RenderHuman(Manifest, ValidationResult)};
+	const auto sBootstrapJson{Content::OpenF3BootstrapReport::RenderJson(Manifest, ValidationResult)};
 	
 	mSystem.get().Printf("%s", sBootstrapReport.c_str());
+	mSystem.get().Printf("OPENF3_BOOTSTRAP_JSON:%s\n", sBootstrapJson.c_str());
 	mbBootstrapOnly = Manifest.bootstrapOnly;
 	
 	if(ValidationResult.HasErrors())

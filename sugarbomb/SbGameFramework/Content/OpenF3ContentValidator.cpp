@@ -27,6 +27,7 @@ along with SugarBombEngine. If not, see <http://www.gnu.org/licenses/>.
 
 #include <algorithm>
 #include <cctype>
+#include <set>
 
 namespace
 {
@@ -72,6 +73,9 @@ OpenF3ContentValidationResult OpenF3ContentValidator::Validate(const OpenF3Conte
 {
 	OpenF3ContentValidationResult Result;
 	
+	if(aManifest.installRoots.empty())
+		Result.AddWarning("No install roots specified for content bootstrap.");
+	
 	if(aManifest.dataRoots.empty())
 		Result.AddWarning("No data roots specified for content bootstrap.");
 	
@@ -80,9 +84,11 @@ OpenF3ContentValidationResult OpenF3ContentValidator::Validate(const OpenF3Conte
 	
 	bool bHasMasterPlugin{false};
 	bool bHasRegularPlugin{false};
+	std::set<std::string> MasterPlugins;
 	
-	for(const auto &sPlugin : aManifest.plugins)
+	for(const auto &Plugin : aManifest.plugins)
 	{
+		const auto &sPlugin{Plugin.name};
 		const bool bIsMaster{EndsWithInsensitive(sPlugin, ".esm")};
 		const bool bIsPlugin{EndsWithInsensitive(sPlugin, ".esp")};
 		const bool bIsLightPlugin{EndsWithInsensitive(sPlugin, ".esl")};
@@ -92,6 +98,20 @@ OpenF3ContentValidationResult OpenF3ContentValidator::Validate(const OpenF3Conte
 		
 		if(!(bIsMaster || bIsPlugin || bIsLightPlugin))
 			Result.AddError("Unsupported plugin extension: \"" + sPlugin + "\".");
+		
+		if(bIsMaster || bIsLightPlugin)
+			MasterPlugins.insert(ToLower(sPlugin));
+	};
+	
+	for(const auto &Plugin : aManifest.plugins)
+	{
+		for(const auto &sRequiredMaster : Plugin.requiredMasters)
+		{
+			if(MasterPlugins.find(ToLower(sRequiredMaster)) == MasterPlugins.end())
+			{
+				Result.AddError("Plugin \"" + Plugin.name + "\" requires missing master \"" + sRequiredMaster + "\".");
+			};
+		};
 	};
 	
 	if(bHasRegularPlugin && !bHasMasterPlugin)

@@ -31,10 +31,17 @@ along with SugarBombEngine. If not, see <http://www.gnu.org/licenses/>.
 namespace sbe::SbGameFramework::Content
 {
 
+struct PluginEntry
+{
+	std::string name;
+	std::vector<std::string> requiredMasters;
+};
+
 struct OpenF3ContentManifest
 {
+	std::vector<std::string> installRoots;
 	std::vector<std::string> dataRoots;
-	std::vector<std::string> plugins;
+	std::vector<PluginEntry> plugins;
 	std::vector<std::string> archives;
 	bool bootstrapOnly{false};
 	

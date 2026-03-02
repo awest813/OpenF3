@@ -32,6 +32,8 @@ along with SugarBombEngine. If not, see <http://www.gnu.org/licenses/>.
 namespace
 {
 
+using sbe::SbGameFramework::Content::PluginEntry;
+
 std::string Trim(std::string sValue)
 {
 	while(!sValue.empty() && std::isspace(static_cast<unsigned char>(sValue.front())))
@@ -88,6 +90,86 @@ void Canonicalize(std::vector<std::string> &aValues)
 	}), aValues.end());
 };
 
+PluginEntry ParsePluginEntry(const std::string &sRawEntry)
+{
+	PluginEntry Entry;
+	
+	const auto nSeparatorPos{sRawEntry.find('|')};
+	if(nSeparatorPos == std::string::npos)
+	{
+		Entry.name = Trim(sRawEntry);
+		return Entry;
+	};
+	
+	Entry.name = Trim(sRawEntry.substr(0, nSeparatorPos));
+	const auto sMastersPart{Trim(sRawEntry.substr(nSeparatorPos + 1))};
+	
+	std::string sCurrentMaster;
+	for(const char cSymbol : sMastersPart)
+	{
+		if(cSymbol == '+' || cSymbol == ',')
+		{
+			auto sMaster{Trim(sCurrentMaster)};
+			if(!sMaster.empty())
+				Entry.requiredMasters.emplace_back(std::move(sMaster));
+			
+			sCurrentMaster.clear();
+			continue;
+		};
+		
+		sCurrentMaster.push_back(cSymbol);
+	};
+	
+	auto sTailMaster{Trim(sCurrentMaster)};
+	if(!sTailMaster.empty())
+		Entry.requiredMasters.emplace_back(std::move(sTailMaster));
+	
+	Canonicalize(Entry.requiredMasters);
+	return Entry;
+};
+
+std::vector<PluginEntry> ParsePluginList(const std::vector<std::string> &aRawEntries)
+{
+	std::vector<PluginEntry> Plugins;
+	Plugins.reserve(aRawEntries.size());
+	
+	for(const auto &sRawEntry : aRawEntries)
+	{
+		auto Entry{ParsePluginEntry(sRawEntry)};
+		if(!Entry.name.empty())
+			Plugins.emplace_back(std::move(Entry));
+	};
+	
+	return Plugins;
+};
+
+void CanonicalizePlugins(std::vector<PluginEntry> &aPlugins)
+{
+	std::sort(aPlugins.begin(), aPlugins.end(), [](const PluginEntry &Lhs, const PluginEntry &Rhs)
+	{
+		return ToLower(Lhs.name) < ToLower(Rhs.name);
+	});
+	
+	std::vector<PluginEntry> Deduplicated;
+	Deduplicated.reserve(aPlugins.size());
+	
+	for(auto &Plugin : aPlugins)
+	{
+		if(Deduplicated.empty() || ToLower(Deduplicated.back().name) != ToLower(Plugin.name))
+		{
+			Canonicalize(Plugin.requiredMasters);
+			Deduplicated.emplace_back(std::move(Plugin));
+			continue;
+		};
+		
+		auto &MergedMasters{Deduplicated.back().requiredMasters};
+		MergedMasters.insert(MergedMasters.end(), Plugin.requiredMasters.begin(), Plugin.requiredMasters.end());
+		Canonicalize(MergedMasters);
+	};
+	
+	aPlugins = std::move(Deduplicated);
+};
+
 std::vector<std::string> ReadEnvList(const char *asEnvName)
 {
 	if(const char *pRawValue{std::getenv(asEnvName)})
@@ -115,13 +197,15 @@ OpenF3ContentManifest OpenF3ContentManifest::FromEnvironment()
 {
 	OpenF3ContentManifest Manifest;
 	
+	Manifest.installRoots = ReadEnvList("OPENF3_BOOTSTRAP_INSTALL_ROOTS");
 	Manifest.dataRoots = ReadEnvList("OPENF3_BOOTSTRAP_DATA_ROOTS");
-	Manifest.plugins = ReadEnvList("OPENF3_BOOTSTRAP_PLUGINS");
+	Manifest.plugins = ParsePluginList(ReadEnvList("OPENF3_BOOTSTRAP_PLUGINS"));
 	Manifest.archives = ReadEnvList("OPENF3_BOOTSTRAP_ARCHIVES");
 	Manifest.bootstrapOnly = ReadEnvBool("OPENF3_BOOTSTRAP_ONLY");
 	
+	Canonicalize(Manifest.installRoots);
 	Canonicalize(Manifest.dataRoots);
-	Canonicalize(Manifest.plugins);
+	CanonicalizePlugins(Manifest.plugins);
 	Canonicalize(Manifest.archives);
 	
 	return Manifest;

@@ -9,8 +9,13 @@ int main()
 	OpenF3ContentValidator Validator;
 	
 	OpenF3ContentManifest ValidManifest;
+	ValidManifest.installRoots = {"FalloutNV"};
 	ValidManifest.dataRoots = {"Data"};
-	ValidManifest.plugins = {"FalloutNV.esm", "DeadMoney.esm", "MyGameplayPatch.esp"};
+	ValidManifest.plugins = {
+		{"FalloutNV.esm", {}},
+		{"DeadMoney.esm", {}},
+		{"MyGameplayPatch.esp", {"FalloutNV.esm", "DeadMoney.esm"}}
+	};
 	ValidManifest.archives = {"Fallout - Meshes.bsa"};
 	const auto ValidResult{Validator.Validate(ValidManifest)};
 	
@@ -21,8 +26,11 @@ int main()
 	};
 	
 	OpenF3ContentManifest MissingMasterManifest;
+	MissingMasterManifest.installRoots = {"FalloutNV"};
 	MissingMasterManifest.dataRoots = {"Data"};
-	MissingMasterManifest.plugins = {"OnlyPlugin.esp"};
+	MissingMasterManifest.plugins = {
+		{"OnlyPlugin.esp", {"FalloutNV.esm"}}
+	};
 	const auto MissingMasterResult{Validator.Validate(MissingMasterManifest)};
 	
 	if(!MissingMasterResult.HasErrors())

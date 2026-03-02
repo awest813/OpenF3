@@ -36,7 +36,8 @@ namespace sbe::SbGameFramework::Content
 class OpenF3BootstrapReport
 {
 public:
-	static std::string Render(const OpenF3ContentManifest &aManifest, const OpenF3ContentValidationResult &aValidation);
+	static std::string RenderHuman(const OpenF3ContentManifest &aManifest, const OpenF3ContentValidationResult &aValidation);
+	static std::string RenderJson(const OpenF3ContentManifest &aManifest, const OpenF3ContentValidationResult &aValidation);
 };
 
 }; // namespace sbe::SbGameFramework::Content

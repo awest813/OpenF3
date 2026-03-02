@@ -133,6 +133,9 @@ OpenF3BootstrapConfig OpenF3BootstrapConfig::FromCommandLineAndPrefs(int argc, c
 	{
 		if(dictionary *pDict{iniparser_load(asPrefsPath)})
 		{
+			if(const char *pInstallRoots{iniparser_getstring(pDict, "OpenF3:sInstallRoots", "")})
+				AddUniqueStrings(Config.installRoots, SplitList(pInstallRoots));
+			
 			if(const char *pDataRoots{iniparser_getstring(pDict, "OpenF3:sDataRoots", "")})
 				AddUniqueStrings(Config.dataRoots, SplitList(pDataRoots));
 			
@@ -160,6 +163,12 @@ OpenF3BootstrapConfig OpenF3BootstrapConfig::FromCommandLineAndPrefs(int argc, c
 			continue;
 		};
 		
+		if(ConsumePrefixedArg(argv[i], "--openf3-install-root=", sArgValue))
+		{
+			AddUniqueStrings(Config.installRoots, SplitList(sArgValue));
+			continue;
+		};
+		
 		if(ConsumePrefixedArg(argv[i], "--openf3-plugin=", sArgValue))
 		{
 			AddUniqueStrings(Config.plugins, SplitList(sArgValue));
@@ -181,6 +190,7 @@ OpenF3BootstrapConfig OpenF3BootstrapConfig::FromCommandLineAndPrefs(int argc, c
 
 void OpenF3BootstrapConfig::ExportToEnvironment() const
 {
+	SetEnvironmentValue("OPENF3_BOOTSTRAP_INSTALL_ROOTS", JoinList(installRoots));
 	SetEnvironmentValue("OPENF3_BOOTSTRAP_DATA_ROOTS", JoinList(dataRoots));
 	SetEnvironmentValue("OPENF3_BOOTSTRAP_PLUGINS", JoinList(plugins));
 	SetEnvironmentValue("OPENF3_BOOTSTRAP_ARCHIVES", JoinList(archives));
