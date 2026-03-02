@@ -14,6 +14,12 @@ target_sources(${PROJECT_NAME}
 	PRIVATE ${PROJECT_SOURCES}
 )
 
+if(OPENF3_ENABLE_PHASE1_BOOTSTRAP)
+	target_compile_definitions(${PROJECT_NAME}
+		PRIVATE OPENF3_ENABLE_PHASE1_BOOTSTRAP
+	)
+endif()
+
 target_link_libraries(${PROJECT_NAME} SBE-clientapp SBE-application SBE-external-iniparser)
 
 if(NOT SBE_SINGLE_BINARY)

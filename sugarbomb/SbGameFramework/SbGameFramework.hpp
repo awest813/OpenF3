@@ -55,6 +55,8 @@ public:
 	
 	void Frame() override;
 private:
+	void RunContentBootstrap();
+	
 	void CreateMainMenu();
 	
 	void CleanupShell();
@@ -66,6 +68,9 @@ private:
 	
 	IRenderSystem *mpRenderSystem{nullptr};
 	ISoundSystem *mpSoundSystem{nullptr};
+	
+	bool mbBootstrapOnly{false};
+	bool mbRuntimeInitialized{false};
 	
 };
 

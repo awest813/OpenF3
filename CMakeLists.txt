@@ -3,6 +3,7 @@ project(SugarBombEngine)
 
 option(SBE_SINGLE_BINARY "Build everything as a single binary" OFF)
 option(SBE_USE_SDL "Use SDL2 for crossplatform support" OFF)
+option(OPENF3_ENABLE_PHASE1_BOOTSTRAP "Enable OpenF3 content bootstrap phase 1 flow" OFF)
 
 # We want shared libraries (and modules) without any prefix in name
 set(CMAKE_SHARED_LIBRARY_PREFIX "")
