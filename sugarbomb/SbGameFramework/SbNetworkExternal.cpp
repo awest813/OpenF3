@@ -26,6 +26,7 @@ along with SugarBombEngine. If not, see <http://www.gnu.org/licenses/>.
 //*****************************************************************************
 
 #include <functional>
+#include <stdexcept>
 
 #include "SbNetworkExternal.hpp"
 
@@ -54,12 +55,12 @@ void SbNetworkExternal::LoadModule()
 	mnNetworkLib = mSystem.LoadLib("SbNetwork");
 	
 	if(!mnNetworkLib)
-		return;
+		throw std::runtime_error("Failed to load \"SbNetwork\" module library.");
 	
 	GetNetworkAPI_t pfnGetNetworkAPI{mSystem.GetLibSymbol<GetNetworkAPI_t>(mnNetworkLib, "GetNetworkAPI")};
 	
 	if(!pfnGetNetworkAPI)
-		return;
+		throw std::runtime_error("Failed to resolve \"GetNetworkAPI\" symbol from \"SbNetwork\" module.");
 	
 	netImport_t ModuleImports{};
 	ModuleImports.version = NET_API_VERSION;
@@ -67,12 +68,15 @@ void SbNetworkExternal::LoadModule()
 	auto ModuleExports{pfnGetNetworkAPI(&ModuleImports)};
 	
 	if(!ModuleExports)
-		return;
+		throw std::runtime_error("\"SbNetwork\" GetNetworkAPI call returned null exports.");
+	
+	if(ModuleExports->version != NET_API_VERSION)
+		throw std::runtime_error("\"SbNetwork\" API version mismatch.");
 	
 	mpNetworkSystem = ModuleExports->networkSystem;
 	
 	if(!mpNetworkSystem)
-		return;
+		throw std::runtime_error("\"SbNetwork\" exports do not provide a valid INetworkSystem pointer.");
 };
 
 void SbNetworkExternal::UnloadModule()

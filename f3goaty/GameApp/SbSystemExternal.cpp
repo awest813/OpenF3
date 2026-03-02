@@ -51,29 +51,32 @@ void SbSystemExternal::LoadModule()
 	mnSystemLib = SbLibraryLoader::Load("SbSystem");
 	
 	if(!mnSystemLib)
-		throw std::runtime_error("Failed to load the system module!");
+		throw std::runtime_error("Failed to load \"SbSystem\" module library.");
 	
 	GetSystemAPI_t pfnGetSystemAPI{SbLibraryLoader::GetSymbol<GetSystemAPI_t>(mnSystemLib, "GetSystemAPI")};
 	
 	if(!pfnGetSystemAPI)
-		throw std::runtime_error("");
+		throw std::runtime_error("Failed to resolve \"GetSystemAPI\" symbol from \"SbSystem\" module.");
 	
 	sysImport_t ModuleImports{};
 	ModuleImports.version = SYS_API_VERSION;
 	auto ModuleExports{pfnGetSystemAPI(&ModuleImports)};
 	
 	if(!ModuleExports)
-		throw std::runtime_error("");
+		throw std::runtime_error("\"SbSystem\" GetSystemAPI call returned null exports.");
+	
+	if(ModuleExports->version != SYS_API_VERSION)
+		throw std::runtime_error("\"SbSystem\" API version mismatch.");
 	
 	mpSystem = ModuleExports->sys;
 	
 	if(!mpSystem)
-		throw std::runtime_error("");
+		throw std::runtime_error("\"SbSystem\" exports do not provide a valid ISystem pointer.");
 	
 	mpFileSystem = ModuleExports->fileSystem;
 	
 	if(!mpFileSystem)
-		throw std::runtime_error("");
+		throw std::runtime_error("\"SbSystem\" exports do not provide a valid IFileSystem pointer.");
 };
 
 }; // namespace sbe

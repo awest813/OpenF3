@@ -25,6 +25,8 @@ along with SugarBombEngine. If not, see <http://www.gnu.org/licenses/>.
 
 //*****************************************************************************
 
+#include <stdexcept>
+
 #include "SbGameExternal.hpp"
 
 #include "CoreLibs/SbSystem/ISystem.hpp"
@@ -52,24 +54,27 @@ void SbGameExternal::LoadModule()
 	mnGameLib = mSystem.LoadLib("SbGame");
 	
 	if(!mnGameLib)
-		return;
+		throw std::runtime_error("Failed to load \"SbGame\" module library.");
 	
 	GetGameAPI_t pfnGetGameAPI{mSystem.GetLibSymbol<GetGameAPI_t>(mnGameLib, "GetGameAPI")};
 	
 	if(!pfnGetGameAPI)
-		return;
+		throw std::runtime_error("Failed to resolve \"GetGameAPI\" symbol from \"SbGame\" module.");
 	
 	gameImport_t ModuleImports{};
 	ModuleImports.version = GAME_API_VERSION;
 	auto ModuleExports{pfnGetGameAPI(&ModuleImports)};
 	
 	if(!ModuleExports)
-		return;
+		throw std::runtime_error("\"SbGame\" GetGameAPI call returned null exports.");
+	
+	if(ModuleExports->version != GAME_API_VERSION)
+		throw std::runtime_error("\"SbGame\" API version mismatch.");
 	
 	mpGame = ModuleExports->game;
 	
 	if(!mpGame)
-		return;
+		throw std::runtime_error("\"SbGame\" exports do not provide a valid IGame pointer.");
 };
 
 void SbGameExternal::UnloadModule()

@@ -50,7 +50,7 @@ void SbGameFrameworkExternal::LoadModule(IRenderSystem *apRenderSystem, ISoundSy
 	mnFrameworkLib = mSystem.LoadLib("SbGameFramework");
 	
 	if(!mnFrameworkLib)
-		throw std::runtime_error("Failed to load the game framework module!");
+		throw std::runtime_error("Failed to load \"SbGameFramework\" module library.");
 
 	GetGameFrameworkAPI_t pfnGetGameFrameworkAPI{mSystem.GetLibSymbol<GetGameFrameworkAPI_t>(mnFrameworkLib, "GetGameFrameworkAPI")};
 	
@@ -65,7 +65,10 @@ void SbGameFrameworkExternal::LoadModule(IRenderSystem *apRenderSystem, ISoundSy
 	auto ModuleExports{pfnGetGameFrameworkAPI(&ModuleImports)};
 	
 	if(!ModuleExports)
-		throw std::runtime_error("");
+		throw std::runtime_error("\"SbGameFramework\" GetGameFrameworkAPI call returned null exports.");
+	
+	if(ModuleExports->version != GAMEFRAMEWORK_API_VERSION)
+		throw std::runtime_error("\"SbGameFramework\" API version mismatch.");
 	
 	mpFramework = ModuleExports->gameFramework;
 	
