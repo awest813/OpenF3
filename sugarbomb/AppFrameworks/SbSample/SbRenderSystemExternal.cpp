@@ -50,24 +50,27 @@ void SbRenderSystemExternal::LoadModule()
 	mnRenderLib = mSystem.LoadLib("SbGLCoreRenderer");
 	
 	if(!mnRenderLib)
-		throw std::runtime_error("Failed to load the renderer module!");
+		throw std::runtime_error("Failed to load \"SbGLCoreRenderer\" module library.");
 	
 	GetRendererAPI_t pfnGetRendererAPI{mSystem.GetLibSymbol<GetRendererAPI_t>(mnRenderLib, "GetRendererAPI")};
 	
 	if(!pfnGetRendererAPI)
-		throw std::runtime_error("");
+		throw std::runtime_error("Failed to resolve \"GetRendererAPI\" symbol from \"SbGLCoreRenderer\" module.");
 	
 	rendererImport_t ModuleImports{};
 	ModuleImports.version = RENDERER_API_VERSION;
 	auto ModuleExports{pfnGetRendererAPI(&ModuleImports)};
 	
 	if(!ModuleExports)
-		throw std::runtime_error("");
+		throw std::runtime_error("\"SbGLCoreRenderer\" GetRendererAPI call returned null exports.");
+	
+	if(ModuleExports->version != RENDERER_API_VERSION)
+		throw std::runtime_error("\"SbGLCoreRenderer\" API version mismatch.");
 	
 	mpRenderSystem = ModuleExports->renderSystem;
 	
 	if(!mpRenderSystem)
-		throw std::runtime_error("");
+		throw std::runtime_error("\"SbGLCoreRenderer\" exports do not provide a valid IRenderSystem pointer.");
 };
 
 void SbRenderSystemExternal::UnloadModule()

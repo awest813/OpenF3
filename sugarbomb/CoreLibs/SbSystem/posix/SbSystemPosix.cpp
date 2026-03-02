@@ -24,24 +24,63 @@ along with SugarBombEngine. If not, see <http://www.gnu.org/licenses/>.
 /// @file
 
 #include <dlfcn.h>
+#include <string>
 
 #include "SbSystem.hpp"
 
 namespace sbe::SbSystem
 {
 
-int SbSystem::LoadLib(const char *asPath)
+namespace
 {
-	return dlopen(asPath, RTLD_NOW);
+std::string BuildPlatformLibName(const char *asModuleName)
+{
+#if defined(__APPLE__)
+	constexpr auto suffix{".dylib"};
+#else
+	constexpr auto suffix{".so"};
+#endif
+	return std::string(asModuleName) + suffix;
+};
 };
 
-void SbSystem::FreeLib(int anHandle)
+ISystem::LibHandle SbSystem::LoadLib(const char *asPath)
 {
+	if((asPath == nullptr) || (asPath[0] == '\0'))
+		return nullptr;
+	
+	if(void *pHandle{dlopen(asPath, RTLD_NOW)})
+		return pHandle;
+	
+	std::string sPlatformName{BuildPlatformLibName(asPath)};
+	
+	if(void *pHandle{dlopen(sPlatformName.c_str(), RTLD_NOW)})
+		return pHandle;
+	
+	if(sPlatformName.find('/') == std::string::npos && sPlatformName.find('\\') == std::string::npos)
+	{
+		sPlatformName.insert(0, "./");
+		
+		if(void *pHandle{dlopen(sPlatformName.c_str(), RTLD_NOW)})
+			return pHandle;
+	};
+	
+	return nullptr;
+};
+
+void SbSystem::FreeLib(ISystem::LibHandle anHandle)
+{
+	if(!anHandle)
+		return;
+	
 	dlclose(anHandle);
 };
 
-void *SbSystem::GetLibSymbol(int anHandle, const char *asSymbol) const
+void *SbSystem::GetLibSymbol(ISystem::LibHandle anHandle, const char *asSymbol) const
 {
+	if(!anHandle)
+		return nullptr;
+	
 	return dlsym(anHandle, asSymbol);
 };
 

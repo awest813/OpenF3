@@ -26,6 +26,7 @@ along with SugarBombEngine. If not, see <http://www.gnu.org/licenses/>.
 //*****************************************************************************
 
 #include <windows.h>
+#include <string>
 
 #include "AppFrameworks/SbLibraryLoader/SbLibraryLoader.hpp"
 
@@ -34,18 +35,44 @@ along with SugarBombEngine. If not, see <http://www.gnu.org/licenses/>.
 namespace sbe
 {
 
-int SbLibraryLoader::Load(const char *asPath)
+namespace
 {
-	return reinterpret_cast<int>(LoadLibrary(asPath));
+std::string BuildPlatformLibName(const char *asModuleName)
+{
+	constexpr auto suffix{".dll"};
+	return std::string(asModuleName) + suffix;
+};
 };
 
-void SbLibraryLoader::Unload(int anHandle)
+SbLibraryLoader::LibHandle SbLibraryLoader::Load(const char *asPath)
 {
+	if((asPath == nullptr) || (asPath[0] == '\0'))
+		return nullptr;
+	
+	if(HMODULE pHandle{LoadLibraryA(asPath)})
+		return reinterpret_cast<SbLibraryLoader::LibHandle>(pHandle);
+	
+	std::string sPlatformName{BuildPlatformLibName(asPath)};
+	
+	if(HMODULE pHandle{LoadLibraryA(sPlatformName.c_str())})
+		return reinterpret_cast<SbLibraryLoader::LibHandle>(pHandle);
+	
+	return nullptr;
+};
+
+void SbLibraryLoader::Unload(SbLibraryLoader::LibHandle anHandle)
+{
+	if(!anHandle)
+		return;
+	
 	FreeLibrary(reinterpret_cast<HMODULE>(anHandle));
 };
 
-void *SbLibraryLoader::GetSymbol(int anHandle, const char *asSymbol)
+void *SbLibraryLoader::GetSymbol(SbLibraryLoader::LibHandle anHandle, const char *asSymbol)
 {
+	if(!anHandle)
+		return nullptr;
+	
 	return reinterpret_cast<void *>(GetProcAddress(reinterpret_cast<HMODULE>(anHandle), asSymbol));
 };
 

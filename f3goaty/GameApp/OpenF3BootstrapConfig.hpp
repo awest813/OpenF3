@@ -1,7 +1,7 @@
 /*
 *******************************************************************************
 
-Copyright (C) 2019 SugarBombEngine Developers
+Copyright (C) 2026 SugarBombEngine Developers
 
 This file is part of SugarBombEngine
 
@@ -23,37 +23,25 @@ along with SugarBombEngine. If not, see <http://www.gnu.org/licenses/>.
 
 /// @file
 
-//*****************************************************************************
-
 #pragma once
 
-//*****************************************************************************
+#include <string>
+#include <vector>
 
-namespace sbe
+namespace f3goaty
 {
 
-struct ISystem;
-struct IGame;
-
-namespace SbGameFramework
+struct OpenF3BootstrapConfig
 {
-
-class SbGameExternal
-{
-public:
-	SbGameExternal(ISystem &aSystem);
-	~SbGameExternal();
+	std::vector<std::string> installRoots;
+	std::vector<std::string> dataRoots;
+	std::vector<std::string> plugins;
+	std::vector<std::string> archives;
+	bool bootstrapOnly{false};
 	
-	IGame *GetGame() const {return mpGame;}
-private:
-	void LoadModule();
-	void UnloadModule();
+	static OpenF3BootstrapConfig FromCommandLineAndPrefs(int argc, char **argv, const char *asPrefsPath);
 	
-	ISystem &mSystem;
-	
-	IGame *mpGame{nullptr};
-	
-	void *mnGameLib{nullptr};
+	void ExportToEnvironment() const;
 };
 
-};}; // namespace sbe::SbGameFramework
+}; // namespace f3goaty

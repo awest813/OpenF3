@@ -1,7 +1,7 @@
 /*
 *******************************************************************************
 
-Copyright (C) 2019 SugarBombEngine Developers
+Copyright (C) 2026 SugarBombEngine Developers
 
 This file is part of SugarBombEngine
 
@@ -23,37 +23,29 @@ along with SugarBombEngine. If not, see <http://www.gnu.org/licenses/>.
 
 /// @file
 
-//*****************************************************************************
-
 #pragma once
 
-//*****************************************************************************
+#include <string>
+#include <vector>
 
-namespace sbe
+namespace sbe::SbGameFramework::Content
 {
 
-struct ISystem;
-struct IGame;
-
-namespace SbGameFramework
+struct PluginEntry
 {
-
-class SbGameExternal
-{
-public:
-	SbGameExternal(ISystem &aSystem);
-	~SbGameExternal();
-	
-	IGame *GetGame() const {return mpGame;}
-private:
-	void LoadModule();
-	void UnloadModule();
-	
-	ISystem &mSystem;
-	
-	IGame *mpGame{nullptr};
-	
-	void *mnGameLib{nullptr};
+	std::string name;
+	std::vector<std::string> requiredMasters;
 };
 
-};}; // namespace sbe::SbGameFramework
+struct OpenF3ContentManifest
+{
+	std::vector<std::string> installRoots;
+	std::vector<std::string> dataRoots;
+	std::vector<PluginEntry> plugins;
+	std::vector<std::string> archives;
+	bool bootstrapOnly{false};
+	
+	static OpenF3ContentManifest FromEnvironment();
+};
+
+}; // namespace sbe::SbGameFramework::Content

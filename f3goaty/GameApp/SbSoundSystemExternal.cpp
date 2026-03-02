@@ -51,7 +51,7 @@ void SbSoundSystemExternal::LoadModule()
 	mnSoundLib = mSystem.LoadLib("SbSound");
 	
 	if(!mnSoundLib)
-		throw std::runtime_error("Failed to load the sound module!");
+		throw std::runtime_error("Failed to load \"SbSound\" module library.");
 	
 	GetSoundAPI_t pfnGetSoundAPI{mSystem.GetLibSymbol<GetSoundAPI_t>(mnSoundLib, "GetSoundAPI")};
 	
@@ -64,7 +64,10 @@ void SbSoundSystemExternal::LoadModule()
 	auto ModuleExports{pfnGetSoundAPI(&ModuleImports)};
 	
 	if(!ModuleExports)
-		throw std::runtime_error("");
+		throw std::runtime_error("\"SbSound\" GetSoundAPI call returned null exports.");
+	
+	if(ModuleExports->version != SOUND_API_VERSION)
+		throw std::runtime_error("\"SbSound\" API version mismatch.");
 	
 	mpSoundSystem = ModuleExports->soundSystem;
 	

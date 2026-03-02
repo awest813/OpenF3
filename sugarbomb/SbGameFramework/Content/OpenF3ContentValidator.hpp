@@ -1,7 +1,7 @@
 /*
 *******************************************************************************
 
-Copyright (C) 2019 SugarBombEngine Developers
+Copyright (C) 2026 SugarBombEngine Developers
 
 This file is part of SugarBombEngine
 
@@ -23,37 +23,41 @@ along with SugarBombEngine. If not, see <http://www.gnu.org/licenses/>.
 
 /// @file
 
-//*****************************************************************************
-
 #pragma once
 
-//*****************************************************************************
+#include <string>
+#include <vector>
 
-namespace sbe
+#include "OpenF3ContentManifest.hpp"
+
+namespace sbe::SbGameFramework::Content
 {
 
-struct ISystem;
-struct IGame;
-
-namespace SbGameFramework
+enum class ValidationSeverity
 {
-
-class SbGameExternal
-{
-public:
-	SbGameExternal(ISystem &aSystem);
-	~SbGameExternal();
-	
-	IGame *GetGame() const {return mpGame;}
-private:
-	void LoadModule();
-	void UnloadModule();
-	
-	ISystem &mSystem;
-	
-	IGame *mpGame{nullptr};
-	
-	void *mnGameLib{nullptr};
+	Warning,
+	Error
 };
 
-};}; // namespace sbe::SbGameFramework
+struct ValidationIssue
+{
+	ValidationSeverity severity{ValidationSeverity::Warning};
+	std::string message;
+};
+
+struct OpenF3ContentValidationResult
+{
+	std::vector<ValidationIssue> issues;
+	
+	bool HasErrors() const;
+	void AddWarning(const std::string &sMessage);
+	void AddError(const std::string &sMessage);
+};
+
+class OpenF3ContentValidator
+{
+public:
+	OpenF3ContentValidationResult Validate(const OpenF3ContentManifest &aManifest) const;
+};
+
+}; // namespace sbe::SbGameFramework::Content

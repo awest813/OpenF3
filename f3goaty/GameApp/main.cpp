@@ -33,6 +33,7 @@ along with SugarBombEngine. If not, see <http://www.gnu.org/licenses/>.
 #include "SbInputSystemExternal.hpp"
 #include "SbSoundSystemExternal.hpp"
 #include "SbGameFrameworkExternal.hpp"
+#include "OpenF3BootstrapConfig.hpp"
 
 #ifdef _WIN32
 #	include <windows.h>
@@ -114,7 +115,13 @@ int main(int argc, char **argv)
 		nWindowWidth = iniparser_getint(pDict, "Display:iSize W", 1280);
 		nWindowHeight = iniparser_getint(pDict, "Display:iSize H", 600);
 		bWindowFullScreen = iniparser_getboolean(pDict, "Display:bFull Screen", false);
+		iniparser_freedict(pDict);
 	};
+	
+#ifdef OPENF3_ENABLE_PHASE1_BOOTSTRAP
+	const auto BootstrapConfig{f3goaty::OpenF3BootstrapConfig::FromCommandLineAndPrefs(argc, argv, "FalloutPrefs.ini")};
+	BootstrapConfig.ExportToEnvironment();
+#endif
 	
 	f3goaty::CGameApp App(sWindowTitle, nWindowWidth, nWindowHeight, bWindowFullScreen, pGameFramework, pSoundSystem, pRenderSystem, pInputSystem, pSystem, argc, argv);
 	App.Run();

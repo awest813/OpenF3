@@ -50,24 +50,27 @@ void SbInputSystemExternal::LoadModule()
 	mnInputLib = mSystem.LoadLib("SbInput");
 	
 	if(!mnInputLib)
-		throw std::runtime_error("Failed to load the input module!");
+		throw std::runtime_error("Failed to load \"SbInput\" module library.");
 	
 	GetInputAPI_t pfnGetInputAPI{mSystem.GetLibSymbol<GetInputAPI_t>(mnInputLib, "GetInputAPI")};
 	
 	if(!pfnGetInputAPI)
-		throw std::runtime_error("");
+		throw std::runtime_error("Failed to resolve \"GetInputAPI\" symbol from \"SbInput\" module.");
 	
 	inputImport_t ModuleImports{};
 	ModuleImports.version = INPUT_API_VERSION;
 	auto ModuleExports{pfnGetInputAPI(&ModuleImports)};
 	
 	if(!ModuleExports)
-		throw std::runtime_error("");
+		throw std::runtime_error("\"SbInput\" GetInputAPI call returned null exports.");
+	
+	if(ModuleExports->version != INPUT_API_VERSION)
+		throw std::runtime_error("\"SbInput\" API version mismatch.");
 	
 	mpInputSystem = ModuleExports->inputSystem;
 	
 	if(!mpInputSystem)
-		throw std::runtime_error("");
+		throw std::runtime_error("\"SbInput\" exports do not provide a valid IInputSystem pointer.");
 };
 
 void SbInputSystemExternal::UnloadModule()

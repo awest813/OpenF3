@@ -38,6 +38,8 @@ Suite 120, Rockville, Maryland 20850 USA.
 
 //*****************************************************************************
 
+#include <stdexcept>
+
 #include "SbGameFramework.hpp"
 
 #include "CoreLibs/SbSystem/ISystem.hpp"
@@ -49,6 +51,12 @@ Suite 120, Rockville, Maryland 20850 USA.
 #include "CoreLibs/SbRenderer/IRenderSystem.hpp"
 
 #include "CoreLibs/SbSound/ISoundSystem.hpp"
+
+#ifdef OPENF3_ENABLE_PHASE1_BOOTSTRAP
+#	include "Content/OpenF3BootstrapReport.hpp"
+#	include "Content/OpenF3ContentManifest.hpp"
+#	include "Content/OpenF3ContentValidator.hpp"
+#endif
 
 //*****************************************************************************
 
@@ -72,30 +80,66 @@ SbGameFramework::SbGameFramework(IRenderSystem *apRenderSystem, ISoundSystem *ap
 
 void SbGameFramework::Init()
 {
+	RunContentBootstrap();
+	
+	if(mbBootstrapOnly)
+	{
+		mSystem.get().Printf("OpenF3 bootstrap-only mode enabled. Skipping runtime initialization.\n");
+		return;
+	};
+	
 	mNetworkSystem.Init();
 	mGame.Init();
 	
 	CreateMainMenu();
+	mbRuntimeInitialized = true;
 };
 
 void SbGameFramework::Shutdown()
 {
+	if(!mbRuntimeInitialized)
+		return;
 	
 	printf("CleanupShell();\n");
 	CleanupShell();
 	
 	mGame.Shutdown();
 	mNetworkSystem.Shutdown();
+	mbRuntimeInitialized = false;
 };
 
 void SbGameFramework::Frame()
 {
+	if(!mbRuntimeInitialized)
+		return;
+	
 	idUserCmdMgr UserCmdMgrStub;
 	gameReturn_t GameReturnStub;
 	
 	mGame.RunFrame(UserCmdMgrStub, GameReturnStub);
 	mGame.ClientRunFrame(UserCmdMgrStub, false, GameReturnStub);
 	mGame.Draw(0);
+};
+
+void SbGameFramework::RunContentBootstrap()
+{
+#ifdef OPENF3_ENABLE_PHASE1_BOOTSTRAP
+	const auto Manifest{Content::OpenF3ContentManifest::FromEnvironment()};
+	
+	Content::OpenF3ContentValidator Validator;
+	const auto ValidationResult{Validator.Validate(Manifest)};
+	const auto sBootstrapReport{Content::OpenF3BootstrapReport::RenderHuman(Manifest, ValidationResult)};
+	const auto sBootstrapJson{Content::OpenF3BootstrapReport::RenderJson(Manifest, ValidationResult)};
+	
+	mSystem.get().Printf("%s", sBootstrapReport.c_str());
+	mSystem.get().Printf("OPENF3_BOOTSTRAP_JSON:%s\n", sBootstrapJson.c_str());
+	mbBootstrapOnly = Manifest.bootstrapOnly;
+	
+	if(ValidationResult.HasErrors())
+		throw std::runtime_error("OpenF3 content bootstrap validation failed. See bootstrap report for details.");
+#else
+	mbBootstrapOnly = false;
+#endif
 };
 
 /*

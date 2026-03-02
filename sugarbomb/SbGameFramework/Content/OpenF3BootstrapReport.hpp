@@ -1,7 +1,7 @@
 /*
 *******************************************************************************
 
-Copyright (C) 2019 SugarBombEngine Developers
+Copyright (C) 2026 SugarBombEngine Developers
 
 This file is part of SugarBombEngine
 
@@ -23,37 +23,21 @@ along with SugarBombEngine. If not, see <http://www.gnu.org/licenses/>.
 
 /// @file
 
-//*****************************************************************************
-
 #pragma once
 
-//*****************************************************************************
+#include <string>
 
-namespace sbe
+#include "OpenF3ContentManifest.hpp"
+#include "OpenF3ContentValidator.hpp"
+
+namespace sbe::SbGameFramework::Content
 {
 
-struct ISystem;
-struct IGame;
-
-namespace SbGameFramework
-{
-
-class SbGameExternal
+class OpenF3BootstrapReport
 {
 public:
-	SbGameExternal(ISystem &aSystem);
-	~SbGameExternal();
-	
-	IGame *GetGame() const {return mpGame;}
-private:
-	void LoadModule();
-	void UnloadModule();
-	
-	ISystem &mSystem;
-	
-	IGame *mpGame{nullptr};
-	
-	void *mnGameLib{nullptr};
+	static std::string RenderHuman(const OpenF3ContentManifest &aManifest, const OpenF3ContentValidationResult &aValidation);
+	static std::string RenderJson(const OpenF3ContentManifest &aManifest, const OpenF3ContentValidationResult &aValidation);
 };
 
-};}; // namespace sbe::SbGameFramework
+}; // namespace sbe::SbGameFramework::Content
