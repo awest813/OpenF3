@@ -28,11 +28,13 @@ along with SugarBombEngine. If not, see <http://www.gnu.org/licenses/>.
 #include <algorithm>
 #include <cctype>
 #include <cstdlib>
-
-#include "iniparser.h"
+#include <fstream>
+#include <unordered_map>
 
 namespace
 {
+
+using PrefsMap = std::unordered_map<std::string, std::string>;
 
 std::string Trim(std::string sValue)
 {
@@ -120,6 +122,80 @@ void SetEnvironmentValue(const char *asName, const std::string &sValue)
 #endif
 };
 
+PrefsMap LoadPrefs(const char *asPrefsPath)
+{
+	PrefsMap Result;
+
+	if(!asPrefsPath || asPrefsPath[0] == '\0')
+		return Result;
+
+	std::ifstream PrefsFile{asPrefsPath};
+	if(!PrefsFile)
+		return Result;
+
+	std::string sCurrentSection;
+	std::string sLine;
+
+	while(std::getline(PrefsFile, sLine))
+	{
+		auto sTrimmedLine{Trim(sLine)};
+		if(sTrimmedLine.empty() || sTrimmedLine[0] == ';' || sTrimmedLine[0] == '#')
+			continue;
+
+		if(sTrimmedLine.front() == '[' && sTrimmedLine.back() == ']')
+		{
+			sCurrentSection = Trim(sTrimmedLine.substr(1, sTrimmedLine.size() - 2));
+			continue;
+		};
+
+		auto EqualsPos{sTrimmedLine.find('=')};
+		if(EqualsPos == std::string::npos)
+			continue;
+
+		auto sKey{Trim(sTrimmedLine.substr(0, EqualsPos))};
+		auto sValue{Trim(sTrimmedLine.substr(EqualsPos + 1))};
+
+		if(sKey.empty())
+			continue;
+
+		if(!sCurrentSection.empty())
+			sKey = sCurrentSection + ":" + sKey;
+
+		Result[sKey] = sValue;
+	};
+
+	return Result;
+};
+
+const std::string &GetPrefsValue(const PrefsMap &aPrefs, const std::string &sKey, const std::string &sDefault)
+{
+	if(auto It{aPrefs.find(sKey)}; It != aPrefs.end())
+		return It->second;
+
+	return sDefault;
+};
+
+bool ParsePrefsBool(const PrefsMap &aPrefs, const std::string &sKey, bool bDefault)
+{
+	static const std::string EmptyString;
+	const auto &sValue{GetPrefsValue(aPrefs, sKey, EmptyString)};
+	if(sValue.empty())
+		return bDefault;
+
+	std::string sLower;
+	sLower.reserve(sValue.size());
+	for(const auto cSymbol : sValue)
+		sLower.push_back(static_cast<char>(std::tolower(static_cast<unsigned char>(cSymbol))));
+
+	if(sLower == "1" || sLower == "true" || sLower == "yes" || sLower == "on")
+		return true;
+
+	if(sLower == "0" || sLower == "false" || sLower == "no" || sLower == "off")
+		return false;
+
+	return bDefault;
+};
+
 }; // namespace
 
 namespace f3goaty
@@ -131,26 +207,16 @@ OpenF3BootstrapConfig OpenF3BootstrapConfig::FromCommandLineAndPrefs(int argc, c
 	
 	if(asPrefsPath && asPrefsPath[0] != '\0')
 	{
-		if(dictionary *pDict{iniparser_load(asPrefsPath)})
-		{
-			if(const char *pInstallRoots{iniparser_getstring(pDict, "OpenF3:sInstallRoots", "")})
-				AddUniqueStrings(Config.installRoots, SplitList(pInstallRoots));
-			
-			if(const char *pDataRoots{iniparser_getstring(pDict, "OpenF3:sDataRoots", "")})
-				AddUniqueStrings(Config.dataRoots, SplitList(pDataRoots));
-			
-			if(const char *pPlugins{iniparser_getstring(pDict, "OpenF3:sPlugins", "")})
-				AddUniqueStrings(Config.plugins, SplitList(pPlugins));
-			
-			if(const char *pArchives{iniparser_getstring(pDict, "OpenF3:sArchives", "")})
-				AddUniqueStrings(Config.archives, SplitList(pArchives));
-			
-			if(const char *pLegacyDataRoot{iniparser_getstring(pDict, "General:SLocalMasterPath", "")})
-				AddUniqueStrings(Config.dataRoots, SplitList(pLegacyDataRoot));
-			
-			Config.bootstrapOnly = iniparser_getboolean(pDict, "OpenF3:bBootstrapOnly", false);
-			iniparser_freedict(pDict);
-		};
+		static const std::string EmptyString;
+		const auto Prefs{LoadPrefs(asPrefsPath)};
+
+		AddUniqueStrings(Config.installRoots, SplitList(GetPrefsValue(Prefs, "OpenF3:sInstallRoots", EmptyString)));
+		AddUniqueStrings(Config.dataRoots, SplitList(GetPrefsValue(Prefs, "OpenF3:sDataRoots", EmptyString)));
+		AddUniqueStrings(Config.plugins, SplitList(GetPrefsValue(Prefs, "OpenF3:sPlugins", EmptyString)));
+		AddUniqueStrings(Config.archives, SplitList(GetPrefsValue(Prefs, "OpenF3:sArchives", EmptyString)));
+		AddUniqueStrings(Config.dataRoots, SplitList(GetPrefsValue(Prefs, "General:SLocalMasterPath", EmptyString)));
+
+		Config.bootstrapOnly = ParsePrefsBool(Prefs, "OpenF3:bBootstrapOnly", false);
 	};
 	
 	for(int i{1}; i < argc; ++i)

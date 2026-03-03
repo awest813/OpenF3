@@ -23,9 +23,10 @@ along with SugarBombEngine. If not, see <http://www.gnu.org/licenses/>.
 
 /// @file
 
+#include <cctype>
 #include <cstdlib>
-
-#include "iniparser.h"
+#include <fstream>
+#include <string>
 
 #include "GameApp.hpp"
 #include "SbSystemExternal.hpp"
@@ -38,6 +39,63 @@ along with SugarBombEngine. If not, see <http://www.gnu.org/licenses/>.
 #ifdef _WIN32
 #	include <windows.h>
 #endif
+
+
+namespace
+{
+
+std::string Trim(std::string sValue)
+{
+	while(!sValue.empty() && std::isspace(static_cast<unsigned char>(sValue.front())))
+		sValue.erase(sValue.begin());
+
+	while(!sValue.empty() && std::isspace(static_cast<unsigned char>(sValue.back())))
+		sValue.pop_back();
+
+	return sValue;
+};
+
+void LoadDisplayPrefs(const char *asPath, int &anWidth, int &anHeight, bool &abFullScreen)
+{
+	std::ifstream PrefsFile{asPath};
+	if(!PrefsFile)
+		return;
+
+	std::string sCurrentSection;
+	std::string sLine;
+
+	while(std::getline(PrefsFile, sLine))
+	{
+		auto sTrimmedLine{Trim(sLine)};
+		if(sTrimmedLine.empty() || sTrimmedLine[0] == ';' || sTrimmedLine[0] == '#')
+			continue;
+
+		if(sTrimmedLine.front() == '[' && sTrimmedLine.back() == ']')
+		{
+			sCurrentSection = Trim(sTrimmedLine.substr(1, sTrimmedLine.size() - 2));
+			continue;
+		};
+
+		if(sCurrentSection != "Display")
+			continue;
+
+		auto EqualsPos{sTrimmedLine.find('=')};
+		if(EqualsPos == std::string::npos)
+			continue;
+
+		auto sKey{Trim(sTrimmedLine.substr(0, EqualsPos))};
+		auto sValue{Trim(sTrimmedLine.substr(EqualsPos + 1))};
+
+		if(sKey == "iSize W")
+			anWidth = std::strtol(sValue.c_str(), nullptr, 10);
+		else if(sKey == "iSize H")
+			anHeight = std::strtol(sValue.c_str(), nullptr, 10);
+		else if(sKey == "bFull Screen")
+			abFullScreen = (std::strtol(sValue.c_str(), nullptr, 10) != 0);
+	};
+};
+
+}; // namespace
 
 //sbe::ISoundSystem *CreateSoundSystem();
 //sbe::IGameFramework *CreateGameFramework();
@@ -103,21 +161,13 @@ int main(int argc, char **argv)
 	sbe::IInputSystem *pInputSystem = CreateInputSystem(*pSystem);
 	sbe::IGameFramework *pGameFramework = CreateGameFramework(*pSystem, pRenderSystem, pSoundSystem);
 	
-	dictionary *pDict = iniparser_load("FalloutPrefs.ini"); // Fallout_default
-	
 	const char *sWindowTitle{"F3GOATY"};
 	int nWindowWidth{1280};
 	int nWindowHeight{600};
 	bool bWindowFullScreen{false};
-	
-	if(pDict != nullptr)
-	{
-		nWindowWidth = iniparser_getint(pDict, "Display:iSize W", 1280);
-		nWindowHeight = iniparser_getint(pDict, "Display:iSize H", 600);
-		bWindowFullScreen = iniparser_getboolean(pDict, "Display:bFull Screen", false);
-		iniparser_freedict(pDict);
-	};
-	
+
+	LoadDisplayPrefs("FalloutPrefs.ini", nWindowWidth, nWindowHeight, bWindowFullScreen);
+
 #ifdef OPENF3_ENABLE_PHASE1_BOOTSTRAP
 	const auto BootstrapConfig{f3goaty::OpenF3BootstrapConfig::FromCommandLineAndPrefs(argc, argv, "FalloutPrefs.ini")};
 	BootstrapConfig.ExportToEnvironment();

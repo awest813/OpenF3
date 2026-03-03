@@ -24,6 +24,7 @@ along with SugarBombEngine. If not, see <http://www.gnu.org/licenses/>.
 /// @file
 
 #include <functional>
+#include <stdexcept>
 
 #include "SbGameFrameworkExternal.hpp"
 
